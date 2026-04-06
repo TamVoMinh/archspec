@@ -1,0 +1,61 @@
+name: SDA Architecture Checks
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  sda-check:
+    name: SDA Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install SDA CLI
+        run: pip install sda-cli
+
+      - name: Run SDA checks (blocking on errors)
+        run: sda check --strict
+
+      - name: Validate knowledge graph index
+        run: sda index --validate
+        continue-on-error: true   # non-blocking
+
+  yaml-schema:
+    name: YAML Schema Validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install yamale
+        run: pip install yamale==4.0.4
+
+      - name: Validate problem inbox files
+        run: |
+          files=$(ls architecture/inbox/PROB-[0-9]*.yaml 2>/dev/null || true)
+          if [ -n "$files" ]; then
+            yamale -s schemas/problem.schema.yaml $files
+          else
+            echo "No problem files found — skipping"
+          fi
+
+      - name: Validate service model
+        run: yamale -s schemas/service.schema.yaml architecture/model/services.yaml
+
+      - name: Validate OWNERS.yaml
+        run: |
+          if [ -f OWNERS.yaml ]; then
+            yamale -s schemas/owners.schema.yaml OWNERS.yaml
+          fi

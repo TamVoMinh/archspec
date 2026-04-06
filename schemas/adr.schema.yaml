@@ -1,0 +1,8 @@
+# Schema for ## Metadata block fields in ADR Markdown files
+# NOTE: This schema validates a standalone YAML block extracted from ADR files.
+# See scripts/check-adr-lifecycle.py for extraction and validation logic.
+---
+status: enum('proposed', 'accepted', 'rejected', 'superseded', 'deprecated')
+date: day()
+superseded_by: str(required=False)
+links: list(str(), required=False)

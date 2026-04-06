@@ -1,0 +1,17 @@
+id: PROB-001
+title: API latency spike on billing service
+source: slack
+type: performance
+created_at: 2026-04-01
+status: active
+services:
+  - api-gateway
+  - billing
+symptoms:
+  - p95 latency > 2s
+  - timeout errors on checkout
+constraints:
+  - cannot scale DB vertically
+tags:
+  - urgent
+  - production

@@ -1,0 +1,12 @@
+# Schema for architecture/model/services.yaml
+# Validated in CI via: yamale -s schemas/service.schema.yaml architecture/model/services.yaml
+---
+services: map(include('service'), required=True)
+
+---
+service:
+  type: enum('postgres', 'redis', 'api', 'worker', 'queue', 'external', 'frontend', 'other', required=False)
+  depends_on: list(str(), required=False)
+  owner: str(required=False)
+  last_reviewed: day(required=False)
+  deprecated: bool(required=False)

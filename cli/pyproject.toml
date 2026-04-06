@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sda-cli"
+version = "0.1.0"
+description = "ArchSpec — CLI for Spec-Driven Architecture (SDA)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["architecture", "adr", "decision-records", "spec-driven-architecture", "architecture-as-code"]
+dependencies = [
+    "typer>=0.12",
+    "pyyaml>=6.0",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+]
+
+[project.scripts]
+sda = "sda.main:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+sda = [
+    "templates/**/*",
+    "templates/**/.*",
+    "templates/**/.github/**/*",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

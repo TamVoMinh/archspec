@@ -1,0 +1,25 @@
+services:
+  api-gateway:
+    type: api
+    depends_on:
+      - auth
+      - billing
+    owner: architect@company.com
+    last_reviewed: 2026-04-06
+
+  billing:
+    type: api
+    depends_on:
+      - database
+    owner: architect@company.com
+    last_reviewed: 2026-04-06
+
+  database:
+    type: postgres
+    owner: architect@company.com
+    last_reviewed: 2026-04-06
+
+  auth:
+    type: api
+    owner: architect@company.com
+    last_reviewed: 2026-04-06

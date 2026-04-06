@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+pip-wheel-metadata/
+.venv/
+venv/
+dist/
+build/
+
+# Editors
+.DS_Store
+.idea/
+.vscode/
+
+# Env
+.env

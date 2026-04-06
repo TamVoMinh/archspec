@@ -1,0 +1,54 @@
+# OWNERS.yaml
+# Defines roles, responsibilities, SLAs, and governance policy for the AOS.
+# Validated in CI via: yamale -s schemas/owners.schema.yaml OWNERS.yaml
+
+roles:
+  architecture_lead:
+    name: "[Architecture Lead Name]"
+    email: "[lead@company.com]"
+    responsibilities:
+      - ADR final acceptance
+      - inbox triage SLA enforcement
+      - services.yaml update approval
+      - schema changes approval
+    triage_sla_hours: 48
+    deputy: ~  # set to an email when the lead is unavailable
+
+  contributors: []
+  # contributors:
+  #   - name: Jane Doe
+  #     email: jane.doe@company.com
+  #     domain: billing
+  #   - name: Alex Kim
+  #     email: alex.kim@company.com
+  #     domain: api-gateway
+
+triage_policy:
+  inbox_sla_hours: 48
+  adr_review_required_approvers: 2
+  adr_acceptance_requires: architecture_lead
+  pr_review_matrix:
+    new_inbox_problem: 1          # any contributor
+    adr_proposed: 1               # domain owner
+    adr_accepted: 2               # domain owner + architecture lead
+    services_yaml_change: arch_lead_required
+    schema_change: arch_lead_required
+
+domain_ownership: {}
+  # Map service names to owner emails. Must cover all services in services.yaml.
+  # api-gateway: alex.kim@company.com
+  # billing: jane.doe@company.com
+  # database: lead@company.com
+
+governance:
+  label_lifecycle:
+    adr_proposed: "Open for comment — minimum 5 business days"
+    adr_contested: "Conflicting views — architecture lead decision required within 3 business days"
+    adr_accepted: "2 approvals received including architecture lead"
+    adr_rejected: "Closed — rejection rationale recorded in PR"
+
+  conflict_resolution: |
+    If two contributors submit conflicting ADRs on the same service within 7 calendar days,
+    the architecture lead schedules a joint resolution session within 3 business days.
+    The session outcome is recorded as a new ADR that supersedes both conflicting entries.
+    Both original ADRs are updated to status: superseded with superseded_by pointing to the resolution ADR.

@@ -1,0 +1,24 @@
+# CODEOWNERS
+# Enforces mandatory PR reviewers per path.
+# Format: <path-pattern>  @<github-username>
+# Replace placeholder usernames with actual GitHub handles.
+
+# Architecture lead must review all service model changes
+architecture/model/           @arch-lead
+
+# Architecture lead must review all schema changes
+schemas/                      @arch-lead
+
+# Architecture lead must review OWNERS.yaml changes
+OWNERS.yaml                   @arch-lead
+
+# Architecture lead must review CI workflow changes
+.github/workflows/            @arch-lead
+
+# Domain-specific ADR review — add patterns as domains grow
+# architecture/adr/*billing*   @billing-owner
+# architecture/adr/*gateway*   @api-gateway-owner
+# architecture/adr/*auth*      @auth-owner
+
+# All ADR changes require at least the arch lead
+architecture/adr/             @arch-lead

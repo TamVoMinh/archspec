@@ -1,0 +1,15 @@
+# Schema for architecture/inbox/PROB-*.yaml files
+# Validated in CI via: yamale -s schemas/problem.schema.yaml architecture/inbox/
+# Note on draft status: when status=draft, services and symptoms may be empty [].
+# This is enforced by check-staleness.py (behavioral check) not yamale (structural check).
+---
+id: str(pattern=r'^PROB-\d{3,}$')
+title: str(min=5, max=200)
+source: enum('slack', 'jira', 'github', 'meeting', 'email', 'adhoc')
+type: enum('performance', 'security', 'reliability', 'cost', 'ux', 'compliance', 'other')
+created_at: day()
+status: enum('draft', 'active', 'resolved', required=False)
+services: list(str(), required=False)
+symptoms: list(str(), required=False)
+constraints: list(str(), required=False)
+tags: list(str(), required=False)

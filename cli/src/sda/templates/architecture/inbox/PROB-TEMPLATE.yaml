@@ -1,0 +1,16 @@
+# PROB-XXX.yaml — Architecture Problem Template
+# Copy this file and rename it to PROB-<next-id>.yaml
+# Run `archspec capture "your title"` to scaffold automatically
+
+id: PROB-XXX                  # Replace with next sequential ID e.g. PROB-007
+title: ~                      # Short, clear description of the problem (5–200 chars)
+source: slack                 # slack | jira | github | meeting | email | adhoc
+type: other                   # performance | security | reliability | cost | ux | compliance | other
+created_at: 2026-04-06        # Today's date in YYYY-MM-DD format
+status: draft                 # draft | active | resolved
+
+services: []                  # Fill in during triage: affected services from services.yaml
+symptoms: []                  # Observable symptoms of the problem
+
+constraints: []               # Known constraints (optional)
+tags: []                      # Free-form tags (optional)

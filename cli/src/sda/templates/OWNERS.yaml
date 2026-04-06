@@ -1,0 +1,46 @@
+# OWNERS.yaml
+# Defines roles, responsibilities, SLAs, and governance policy for ArchSpec.
+# See: docs/concepts/governance.md
+
+roles:
+  architecture_lead:
+    name: "[Your Name]"
+    email: "[you@company.com]"
+    responsibilities:
+      - ADR final acceptance
+      - Inbox triage SLA enforcement
+      - services.yaml update approval
+      - Schema changes approval
+    triage_sla_hours: 48
+    deputy: ~
+
+  contributors: []
+  # contributors:
+  #   - name: Example Person
+  #     email: example@company.com
+  #     domain: service-name
+
+triage_policy:
+  inbox_sla_hours: 48
+  adr_review_required_approvers: 2
+  adr_acceptance_requires: architecture_lead
+  pr_review_matrix:
+    new_inbox_problem: 1
+    adr_proposed: 1
+    adr_accepted: 2
+    services_yaml_change: arch_lead_required
+    schema_change: arch_lead_required
+
+domain_ownership: {}
+  # Map service names to owner emails.
+  # api-gateway: you@company.com
+
+governance:
+  label_lifecycle:
+    adr_proposed: "Open for comment — minimum 5 business days"
+    adr_contested: "Conflicting views — architecture lead decision required within 3 business days"
+    adr_accepted: "2 approvals received including architecture lead"
+    adr_rejected: "Closed — rejection rationale recorded in PR"
+  conflict_resolution: |
+    If two contributors submit conflicting ADRs on the same service within 7 calendar days,
+    the architecture lead schedules a joint resolution session within 3 business days.

@@ -1,0 +1,38 @@
+# Schema for OWNERS.yaml
+# Validated in CI via: yamale -s schemas/owners.schema.yaml OWNERS.yaml
+---
+roles: include('roles')
+triage_policy: include('triage_policy')
+domain_ownership: map(str(), required=False)
+governance: include('governance', required=False)
+
+---
+roles:
+  architecture_lead: include('arch_lead')
+  contributors: list(include('contributor'), required=False)
+
+---
+arch_lead:
+  name: str()
+  email: str()
+  responsibilities: list(str(), required=False)
+  triage_sla_hours: int()
+  deputy: str(required=False)
+
+---
+contributor:
+  name: str()
+  email: str()
+  domain: str()
+
+---
+triage_policy:
+  inbox_sla_hours: int()
+  adr_review_required_approvers: int()
+  adr_acceptance_requires: str()
+  pr_review_matrix: map(any(), required=False)
+
+---
+governance:
+  label_lifecycle: map(str(), required=False)
+  conflict_resolution: str(required=False)
