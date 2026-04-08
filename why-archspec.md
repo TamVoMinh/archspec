@@ -40,6 +40,45 @@ Every time you are the bottleneck, an engineer is waiting. Every time an enginee
 
 ---
 
+## The signal you are losing
+
+The bottleneck is not just about decisions. It starts earlier — at capture.
+
+Architecture-relevant signal arrives from every direction. Slack threads. Meeting side-comments. SonarQube scans flagging structural debt. Security audits from the QC team. Incident postmortems that surface the same root cause for the third time. A dependency scanner that found 12 new CVEs overnight.
+
+Most of it is never captured.
+
+Not because you do not care. Because there is no place to put it. The signal appears in one tool, you are working in another, and by the time you have context to write it down properly, the moment has passed. Three architecture-relevant observations surface on a Tuesday. By Friday, you remember one of them — vaguely.
+
+The problem is not that you lack a documentation habit. The problem is that there is no **fast, low-friction intake point** between "I noticed something" and "I wrote a formal decision record." The gap between those two is where architectural insight goes to die.
+
+What you need is not a platform. Not a service. Not another dashboard. You need a **dumb pipe** — a queue that holds messages until something processes them. A Slack channel. A shared mailbox. A webhook endpoint. Anything that is always on and accepts input from any source.
+
+On the other side of that pipe, an AI agent — or a human with a CLI — picks up the message, runs `sda capture`, and creates a structured problem file in Git. The architect triages later. The signal is not lost. The discipline holds.
+
+```
+  Sources                  Queue                   ArchSpec
+  (messy, async)           (dumb pipe, always on)  (CLI toolkit)
+
+  Slack msg ─────┐
+  SonarQube ─────┤         ┌──────────┐            ┌──────────┐
+  QC report ─────┼────────▶│ channel  │──── AI ───▶│ sda CLI  │──▶ Git
+  Incident ──────┤         │ mailbox  │   agent    │ captures │
+  Meeting ───────┤         │ webhook  │   picks up │ links    │
+  PR review ─────┘         └──────────┘            └──────────┘
+
+  You don't build          You already             You already
+  this. It exists.         have this.              have this.
+```
+
+The queue does not understand architecture. It does not filter, normalize, or deduplicate. It just holds messages until something processes them. That is all it needs to do.
+
+The AI agent is disposable and replaceable. Today it is GitHub Copilot with MCP access. Tomorrow it is Claude. Next month it is something that does not exist yet. The queue and the CLI stay the same.
+
+**The cheapest way to stop losing signal is not a better memory. It is a dumber pipe.**
+
+---
+
 ## Your AI agents are flying blind
 
 Right now, an AI assistant in your codebase knows nothing about the decisions your team has made. It does not know that ADR-005 prohibits direct database access from the API layer. It does not know that PROB-032 is an open, unresolved problem with the billing service boundary. It does not know that the integration pattern it just generated was explicitly rejected eight months ago.
