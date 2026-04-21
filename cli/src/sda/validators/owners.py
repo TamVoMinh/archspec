@@ -11,6 +11,7 @@ import yaml
 from pathlib import Path
 
 from sda.validators import CheckResult, Severity
+from sda.discovery import load_all_services
 
 REQUIRED_KEYS = {"roles", "triage_policy"}
 
@@ -43,22 +44,30 @@ def validate_owners(owners_file: Path) -> list[CheckResult]:
     return results
 
 
-def validate_domain_coverage(owners_file: Path, services_file: Path) -> list[CheckResult]:
+def validate_domain_coverage(owners_file: Path, services_file: Path, *, model_dir: Path | None = None) -> list[CheckResult]:
     """Ensure all services have a domain_ownership entry in OWNERS.yaml."""
     results: list[CheckResult] = []
 
-    if not owners_file.exists() or not services_file.exists():
+    if not owners_file.exists():
         return results
 
     with owners_file.open(encoding="utf-8") as f:
         owners_data = yaml.safe_load(f) or {}
-    with services_file.open(encoding="utf-8") as f:
-        services_data = yaml.safe_load(f) or {}
 
     domain_ownership = owners_data.get("domain_ownership") or {}
-    services = services_data.get("services") or {}
 
-    for name in services:
+    # Collect service names from all sources
+    service_names: set[str] = set()
+
+    if model_dir is not None and model_dir.exists():
+        all_services, _groups, _errors = load_all_services(model_dir)
+        service_names.update(all_services.keys())
+    elif services_file.exists():
+        with services_file.open(encoding="utf-8") as f:
+            services_data = yaml.safe_load(f) or {}
+        service_names.update((services_data.get("services") or {}).keys())
+
+    for name in sorted(service_names):
         if name not in domain_ownership:
             results.append(CheckResult(
                 Severity.WARNING,

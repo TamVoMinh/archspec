@@ -12,31 +12,23 @@ from datetime import date
 from pathlib import Path
 
 from sda.validators import CheckResult, Severity
+from sda.discovery import discover_problem_files, discover_service_files, load_all_services
 
 STALE_AFTER_DAYS = 180
 TEMPLATE_FILENAME = "PROB-TEMPLATE.yaml"
 
 
-def validate_services(services_file: Path) -> list[CheckResult]:
-    """Check service entries for missing or stale last_reviewed fields."""
+def _validate_service_entries(services: dict, source_file: Path, today: date) -> list[CheckResult]:
+    """Validate individual service entries for owner and staleness."""
     results: list[CheckResult] = []
-
-    if not services_file.exists():
-        results.append(CheckResult(Severity.WARNING, f"services.yaml not found at {services_file}"))
-        return results
-
-    with services_file.open(encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-
-    today = date.today()
-    for name, meta in (data.get("services") or {}).items():
+    for name, meta in services.items():
         meta = meta or {}
 
         if "owner" not in meta:
-            results.append(CheckResult(Severity.WARNING, f"Service '{name}' has no owner", services_file))
+            results.append(CheckResult(Severity.WARNING, f"Service '{name}' has no owner", source_file))
 
         if "last_reviewed" not in meta:
-            results.append(CheckResult(Severity.WARNING, f"MISSING last_reviewed: {name}", services_file))
+            results.append(CheckResult(Severity.WARNING, f"MISSING last_reviewed: {name}", source_file))
             continue
 
         try:
@@ -45,7 +37,7 @@ def validate_services(services_file: Path) -> list[CheckResult]:
             results.append(CheckResult(
                 Severity.ERROR,
                 f"Invalid last_reviewed format for '{name}': {meta['last_reviewed']}",
-                services_file,
+                source_file,
             ))
             continue
 
@@ -54,9 +46,46 @@ def validate_services(services_file: Path) -> list[CheckResult]:
             results.append(CheckResult(
                 Severity.WARNING,
                 f"STALE ({age}d): '{name}' — last reviewed {meta['last_reviewed']}",
-                services_file,
+                source_file,
             ))
+    return results
 
+
+def validate_services(services_file: Path, *, model_dir: Path | None = None) -> list[CheckResult]:
+    """Check service entries for missing or stale last_reviewed fields.
+
+    If model_dir is provided, recursively discovers all services.yaml files.
+    Otherwise falls back to the single services_file.
+    """
+    results: list[CheckResult] = []
+    today = date.today()
+
+    if model_dir is not None and model_dir.exists():
+        # Recursive discovery
+        all_services, _groups, errors = load_all_services(model_dir)
+        for err in errors:
+            results.append(CheckResult(Severity.ERROR, err))
+
+        # Group by source file for per-file validation
+        files_seen: dict[Path, dict] = {}
+        for name, meta in all_services.items():
+            src = meta.pop("_file", services_file)
+            meta.pop("_group", None)
+            files_seen.setdefault(src, {})[name] = meta
+
+        for src, svcs in files_seen.items():
+            results.extend(_validate_service_entries(svcs, src, today))
+        return results
+
+    # Single-file fallback
+    if not services_file.exists():
+        results.append(CheckResult(Severity.WARNING, f"services.yaml not found at {services_file}"))
+        return results
+
+    with services_file.open(encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+
+    results.extend(_validate_service_entries(data.get("services") or {}, services_file, today))
     return results
 
 
@@ -67,8 +96,14 @@ def validate_draft_problems(inbox_dir: Path, sla_hours: int = 48) -> list[CheckR
     if not inbox_dir.exists():
         return results
 
+    try:
+        prob_files = discover_problem_files(inbox_dir)
+    except ValueError as e:
+        results.append(CheckResult(Severity.ERROR, str(e)))
+        return results
+
     today = date.today()
-    for prob_file in sorted(inbox_dir.glob("PROB-[0-9]*.yaml")):
+    for prob_file in prob_files:
         with prob_file.open(encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
 

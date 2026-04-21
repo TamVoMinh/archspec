@@ -31,21 +31,16 @@ ArchSpec is how we solved that for ourselves. We're sharing it because it might 
 
 ## How it works
 
-We didn't build a platform. We didn't want another service to operate. When we looked at the problem honestly, we realized three things:
+ArchSpec integrates with your existing tools instead of introducing a new platform to operate. It solves context loss by breaking architecture tracking into three decoupled layers:
 
-### The architect is the router — and human memory is the worst database ever built
+### 1. The Queue (Input)
+Architecture signals—Slack threads, code scans, or meetings—are routed into a central queue you already use, like a dedicated Slack channel (`#arch-inbox`) or a webhook. This persistent inbox ensures no context is lost in transit.
 
-Every Slack thread, every SonarQube finding, every meeting decision, every QC report — it all flows through one person's brain. That brain is overloaded, context-switching, and lossy. The signal isn't being ignored. It's being lost in transit.
+### 2. The Processor (Agent)
+Set this up however fits your workflow — an AI agent, a CI trigger, or a manual step. Whatever the processor is, it calls `sda`, the CLI for Spec-Driven Architecture. The queue and the CLI are the constants; the processor is your choice.
 
-### We don't need a new system. We need a dumb pipe.
-
-The cheapest way to stop losing signal is not a better memory. It's a dumber pipe. A Slack channel called `#arch-inbox`. A shared mailbox. A webhook endpoint. Something that is always on, accepts input from anything, and holds messages until they're processed. It doesn't need to understand architecture. It just needs to not forget.
-
-Most of us already have one of these. We just haven't pointed it at our architecture practice.
-
-### Any AI agent can be the processor. The toolkit stays the same.
-
-On the other side of that pipe, an AI agent reads the message, runs `sda capture`, and opens a PR. Copilot, Claude, Cursor — anything with MCP or shell access. The agent is disposable and replaceable. The queue and the CLI are not. That's the whole trick: **three decoupled layers, each independently replaceable.**
+### 3. The Record (Git)
+ArchSpec formats the signal into structured, traceable YAML/Markdown records directly in your repository. Git remains the single source of truth.
 
 ![ArchSpec Workflow Flowchart](docs/images/workflow_infographic.png)
 
@@ -105,29 +100,19 @@ Three sources — SonarQube, a security audit, a Slack thread — all normalized
 
 ---
 
-## The discipline behind it
+## Why Spec-Driven Architecture (SDA)?
 
-We think of this like TDD but for architecture. In TDD, tests drive the code. In **Spec-Driven Architecture (SDA)**, decision specs drive the system.
+SDA brings the discipline of Test-Driven Development (TDD) to system architecture: **decision specs drive the system.** 
 
-```
-→ no decision without a problem    — we can always trace back why
-→ no implementation without a spec — ADRs come before engineering
-→ Git is the database              — no servers, no dashboards
-→ Markdown + YAML                  — readable by humans and AI alike
-→ solo or team                     — same discipline, same system
-```
+Instead of architectural context becoming tribal knowledge or evaporating in Slack channels, SDA enforces strict traceability:
 
-Every engineering change has a problem behind it. Every problem has a decision. Every decision has consequences. SDA makes that chain explicit and enforceable — so the reasoning doesn't live in one person's head.
+- **No decision without a problem** — We can always trace back why a change was needed.
+- **No implementation without an ADR spec** — Decisions are standardized and peer-reviewed before engineering begins.
+- **Git is the database** — Lightweight YAML/Markdown records stay readable by humans and AI alike. 
 
----
+By unifying a capture discipline, an ADR practice, and an automated knowledge graph, ArchSpec gives you one Git-native place where all three live together, enforce each other, and stay queryable.
 
-## Why we built this
-
-Architecture work generates constant signal — Slack threads, incident retros, Jira tickets, SonarQube scans, QC reports, hallway conversations. Without a **capture discipline**, that signal evaporates. Without an **ADR practice**, decisions become tribal knowledge. Without a **knowledge graph**, nobody can answer *"what services are affected by this change?"*
-
-We wanted one Git-native place where all three live together, enforce each other, and stay queryable. That's what ArchSpec is.
-
-→ **[Read the full story](why-archspec.md)** — the longer version of why we think the status quo costs more than it looks.
+→ **[Read the full story](why-archspec.md)** — a deeper dive into the methodology.
 
 <details>
 <summary><strong>How it compares</strong></summary>
@@ -163,7 +148,7 @@ sda init
 | Command | What it does |
 |---|---|
 | `sda init` | Scaffold a new SDA project from templates |
-| `sda capture "title"` | Create a draft problem in `architecture/inbox/` |
+| `sda capture "title" [--system SYS] [--attach FILE]` | Create a draft problem in `architecture/inbox/` (with optional system tag and attachments) |
 | `sda check [--strict]` | Validate ADR lifecycle, staleness, and ownership |
 | `sda index [--validate]` | Generate or validate `architecture/index.yaml` |
 | `sda status` | Health overview — problems, ADRs, services, index age |
@@ -175,6 +160,7 @@ sda init
 → **[Getting Started](docs/guides/getting-started.md)** — first steps in 10 minutes<br>
 → **[Your First ADR](docs/guides/first-adr.md)** — step-by-step walkthrough<br>
 → **[Multi-Team Setup](docs/guides/multi-team.md)** — domain ownership and conflict resolution<br>
+→ **[Migration to Partitions](docs/guides/migration-to-partitions.md)** — flat to multi-partition layout<br>
 → **[Problems](docs/concepts/problems.md)** — inbox schema and triage lifecycle<br>
 → **[Decisions](docs/concepts/decisions.md)** — ADR format, state machine, PR labels<br>
 → **[Knowledge Graph](docs/concepts/knowledge-graph.md)** — querying architecture with `yq`<br>

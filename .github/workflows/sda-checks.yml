@@ -19,7 +19,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install SDA CLI
-        run: pip install sda-cli
+        run: pip install -e ./cli
 
       - name: Run SDA checks (blocking on errors)
         run: sda check --strict
