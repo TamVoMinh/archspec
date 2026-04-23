@@ -23,7 +23,7 @@
 ## 4. Ownership Model (Gap 4)
 
 - [x] 4.1 Create `OWNERS.yaml` at repository root with `roles.architecture_lead`, `roles.contributors`, `triage_policy`, and `domain_ownership` sections
-- [ ] 4.2 Fill in actual names, emails, and domain assignments for all current team members
+- [x] 4.2 Fill in actual names, emails, and domain assignments for all current team members
 - [x] 4.3 Create or update `.github/CODEOWNERS` to map `architecture/model/` and `schemas/` to the architecture lead, and domain-specific ADR paths to domain owners
 - [x] 4.4 Add `owners.schema.yaml` to `schemas/` and validate `OWNERS.yaml` against it in CI
 - [x] 4.5 Verify all services in `services.yaml` have a corresponding `domain_ownership` entry in `OWNERS.yaml`
@@ -55,10 +55,10 @@
 
 ## 8. Multi-Architect Governance (Gap 7)
 
-- [ ] 8.1 Create the four ADR PR labels in the repository settings: `adr/proposed`, `adr/accepted`, `adr/rejected`, `adr/contested`
+- [x] 8.1 Create the four ADR PR labels in the repository settings: `adr/proposed`, `adr/accepted`, `adr/rejected`, `adr/contested`
 - [x] 8.2 Document the label lifecycle and conflict resolution policy in a new `OWNERS.yaml` section under `governance`
 - [x] 8.3 Write or reference the PR review requirement matrix (new inbox, ADR proposed, ADR accepted, model change, schema change) in `OWNERS.yaml` under `triage_policy`
-- [ ] 8.4 Configure branch protection rules to enforce minimum approvers per path (model and schema changes require arch lead)
+- [x] 8.4 Configure branch protection rules to enforce minimum approvers per path (model and schema changes require arch lead)
 - [x] 8.5 Create a PR template at `.github/pull_request_template.md` that prompts contributors to set the correct ADR label and verify required reviewers
 
 ## 9. Verification
@@ -67,6 +67,6 @@
 - [x] 9.2 Confirm `architecture/index.yaml` is generated and contains entries for all existing problems, ADRs, and services
 - [x] 9.3 Confirm all existing ADR files have a valid `status` field
 - [x] 9.4 Confirm all existing services in `services.yaml` have `last_reviewed` and `owner` fields
-- [ ] 9.5 Open a test PR and verify `CODEOWNERS` triggers the correct reviewer requests
+- [x] 9.5 Open a test PR and verify `CODEOWNERS` triggers the correct reviewer requests
 - [x] 9.6 Run `python scripts/check-staleness.py` and confirm output matches expected stale/missing entries
-- [ ] 9.6 Run `python scripts/check-staleness.py` and confirm output matches expected stale/missing entries
+- [x] 9.6 Run `python scripts/check-staleness.py` and confirm output matches expected stale/missing entries
