@@ -1,5 +1,8 @@
 ---
+name: "OPSX: New"
 description: Start a new change using the experimental artifact workflow (OPSX)
+category: Workflow
+tags: [workflow, artifacts, experimental]
 ---
 
 Start a new change using the experimental artifact-driven approach.
