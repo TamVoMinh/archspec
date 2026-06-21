@@ -5,6 +5,8 @@ import type { EventBus } from "../bus/bus";
 export interface WorkbenchState {
   model: GraphModel | null;
   selection: string | null;
+  /** Set when the model fails to load or its schema version is unsupported. */
+  loadError: string | null;
 }
 
 export interface WorkbenchStore {
@@ -17,7 +19,7 @@ export interface WorkbenchStore {
  * having missed the announcing event. Updated from bus events.
  */
 export function createStore(bus: EventBus): WorkbenchStore {
-  let state: WorkbenchState = { model: null, selection: null };
+  let state: WorkbenchState = { model: null, selection: null, loadError: null };
   const listeners = new Set<() => void>();
 
   const set = (next: Partial<WorkbenchState>) => {
@@ -25,7 +27,8 @@ export function createStore(bus: EventBus): WorkbenchStore {
     listeners.forEach((l) => l());
   };
 
-  bus.on("model.loaded", ({ model }) => set({ model }));
+  bus.on("model.loaded", ({ model }) => set({ model, loadError: null }));
+  bus.on("model.error", ({ message }) => set({ loadError: message }));
   bus.on("selection.changed", ({ nodeId }) => set({ selection: nodeId }));
 
   return {

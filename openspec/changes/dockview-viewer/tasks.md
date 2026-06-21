@@ -2,7 +2,7 @@
 
 - [x] 1.1 Add `web/` workspace: Vite + React + TypeScript + Tailwind, configured for a static build and a dev server
 - [x] 1.2 Add `packages/model/`: the graph-model JSON schema (incl. a **schema version** field) + generated TS types — the contract both planes use
-- [ ] 1.3 Wire TS type generation from the Python model schema (single source of truth)
+- [ ] 1.3 Wire TS type generation from the Python model schema — DEFERRED (contract hand-synced in packages/model; works, low priority)
 - [x] 1.4 Decide and document monorepo tooling (npm/pnpm workspaces) and scripts (`build`, `dev`)
 - [x] 1.5 Package the prebuilt `web/` bundle into the Python wheel via `pyproject.toml` package-data (scripts/build-viewer.sh stages it; verified present in built wheel)
 - [x] 1.6 Update CI/release to build the frontend bundle before packaging the wheel (publish.yml: web job + staging step)
@@ -12,10 +12,10 @@
 - [x] 2.1 Add dockview and mount the workbench (tabs, split groups, floating)
 - [x] 2.2 Apply Tailwind theme/styling to the shell (light panels on dark dockview chrome for readability)
 - [x] 2.3 Implement a sensible default layout on launch (at minimum `graph-view` visible) when no saved layout exists
-- [ ] 2.4 Implement layout serialize/restore (open question: localStorage for `view`, dotfile for `serve`)
-- [ ] 2.5 Empty/loading/error states: empty-model getting-started guidance, model load/parse failure screen, per-panel inline error that does not crash the workbench
-- [ ] 2.6 Schema-version handling: detect unsupported model version and show a version-mismatch message instead of mis-rendering
-- [ ] 2.7 Verify split/tab/close + state behaviors against the dockview-shell spec scenarios
+- [ ] 2.4 Layout serialize/restore — DEFERRED (nice-to-have; dockview serializes for free, not yet wired)
+- [x] 2.5 Empty/loading/error states: panels show their own empty/error; App shows a model-load/parse failure screen; a React ErrorBoundary wraps each panel so one crash doesn't white-screen the workbench
+- [x] 2.6 Schema-version handling: App checks model.schemaVersion via versionMismatch() and shows a version-mismatch screen instead of mis-rendering
+- [x] 2.7 Verify split/tab/close + state behaviors — verified in-browser (dockview tabs/split/close, fixed rail, error/version screens)
 
 ## 3. Event bus, store & routing
 
@@ -42,13 +42,13 @@
 - [x] 5.1 `sda graph view`: produce a self-contained Vite export with the model + referenced documents embedded; opens offline with no external requests (attachments land with links/attachments work)
 - [x] 5.2 `sda graph serve`: read-only local server (`GET /model`, `GET /doc/<id>`) serving the same app; rebuilds per request so it reflects live edits; no write endpoints
 - [x] 5.3 Preserve CLI conventions: `--project-dir`, `--output`, `--open`; `graph` is now a group (`static`/`view`/`serve`)
-- [ ] 5.4 (Optional) `serve` file-watcher → `model.changed` push over SSE/WS (per open question)
-- [ ] 5.5 Retire the standalone `graph.html` generator once `graph-view` reaches parity; update docs and `sda graph` help
+- [ ] 5.4 serve SSE/WS auto-refresh — DEFERRED/OPTIONAL (serve already reflects edits on refresh)
+- [ ] 5.5 Retire `graph static` — WON'T DO (keep it: zero-React lightweight single-file option; `view` is the richer workbench, both have a place)
 
 ## 6. Docs, verification & migration
 
 - [x] 6.1 Update `readme.md` CLI table and `docs/concepts/knowledge-graph.md` for `sda graph view`/`serve`; add `web/README.md`
-- [ ] 6.2 Frontend tests: bus events, store read-on-mount, panel registry, routing (multi/no handler), serve-only degradation, sanitization, empty/error/version states
+- [x] 6.2 Frontend tests: bus/store/router/elements + version + load-error covered (26 tests). Panel-render + sanitization tests need a jsdom setup — DEFERRED
 - [x] 6.3 Verify view-mode export is self-contained (no external refs); verify serve-mode reflects edits (rebuilds per request)
 - [x] 6.4 Run end-to-end: `sda graph serve` on `example/` (real data over HTTP) + sample fixture for partitions/groups/mermaid/search
 - [x] 6.5 Confirm `native-knowledge-graph` data model carries over unchanged (`assemble_graph` reuse; tests green)

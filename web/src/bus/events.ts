@@ -9,6 +9,7 @@ export type ContentType = "graph" | "markdown" | "mermaid" | "yaml" | "service-d
  */
 export interface EventMap {
   "model.loaded": { model: GraphModel };
+  "model.error": { message: string };
   "selection.changed": { nodeId: string | null };
   "document.open": { id: string; contentType: ContentType };
   "graph.highlight": { nodeIds: string[] };

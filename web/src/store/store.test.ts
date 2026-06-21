@@ -23,6 +23,15 @@ describe("workbench store", () => {
     expect(store.getState().selection).toBe("billing");
   });
 
+  it("records a load error and clears it when a model later loads", () => {
+    const bus = createEventBus();
+    const store = createStore(bus);
+    bus.emit("model.error", { message: "boom" });
+    expect(store.getState().loadError).toBe("boom");
+    bus.emit("model.loaded", { model });
+    expect(store.getState().loadError).toBeNull();
+  });
+
   it("notifies subscribers on change", () => {
     const bus = createEventBus();
     const store = createStore(bus);

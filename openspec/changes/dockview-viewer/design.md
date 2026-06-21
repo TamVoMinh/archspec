@@ -145,3 +145,15 @@ This change is part of a cluster on the same PR; archive deliberately:
   specs and `model-tree-explorer` must then carry a REMOVED delta for it. Prefer archiving the
   two together (or explorer immediately after) so the main specs never describe both a search
   panel and an explorer.
+
+## Scope decisions (remaining work)
+
+- **Keep `sda graph static`** — not retiring it (task 5.5 won't-do). `view` is the richer
+  dockview workbench, but `static` stays a zero-React, lightweight single-file option; the two
+  serve different needs.
+- **`search` panel is obsolete** — superseded by `model-tree-explorer`'s Explorer. Its
+  requirement is removed at archive (see "Archive order & reconciliation").
+- **Deferred (not blocking):** layout persistence (2.4), TS type-gen from the Python schema
+  (1.3), serve SSE auto-refresh (5.4, serve already refreshes), and panel-render/sanitization
+  tests (need a jsdom setup). The robustness requirements the shell spec demands
+  (empty/error/version states, panel isolation) are now implemented and tested.

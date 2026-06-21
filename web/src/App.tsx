@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { DockviewReact, type DockviewReadyEvent } from "dockview";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { DockviewReact, type DockviewReadyEvent, type IDockviewPanelProps } from "dockview";
 import { createEventBus } from "./bus/bus";
 import { createStore } from "./store/store";
 import { createEmbeddedDataSource, createHttpDataSource, type EmbeddedData } from "./data/source";
@@ -9,12 +9,22 @@ import { createOpenRouter, type Mounter } from "./open/router";
 import { GraphViewPanel } from "./panels/GraphViewPanel";
 import { DocumentPanel } from "./panels/DocumentPanel";
 import { ExplorerPanel } from "./panels/ExplorerPanel";
+import { ErrorBoundary } from "./ErrorBoundary";
+import { versionMismatch } from "./version";
 import { ServicesProvider, type Services } from "./services";
 
+// Each panel is wrapped in an error boundary so one panel's render crash
+// shows an inline error instead of white-screening the whole workbench.
 const components = {
-  "graph-view": GraphViewPanel,
-  document: DocumentPanel,
-  explorer: ExplorerPanel,
+  "graph-view": (p: IDockviewPanelProps) => (
+    <ErrorBoundary label="Graph"><GraphViewPanel {...p} /></ErrorBoundary>
+  ),
+  document: (p: IDockviewPanelProps) => (
+    <ErrorBoundary label="Document"><DocumentPanel {...p} /></ErrorBoundary>
+  ),
+  explorer: (p: IDockviewPanelProps) => (
+    <ErrorBoundary label="Explorer"><ExplorerPanel {...p} /></ErrorBoundary>
+  ),
 };
 
 function createServices(): Services {
@@ -55,16 +65,25 @@ export default function App() {
   const servicesRef = useRef<Services | null>(null);
   if (!servicesRef.current) servicesRef.current = createServices();
   const services = servicesRef.current;
+  const loadError = useSyncExternalStore(services.store.subscribe, () => services.store.getState().loadError);
 
-  // Load the model (pull), then announce it on the bus.
+  // Load the model (pull): check the schema version, then announce loaded or error.
   useEffect(() => {
     let cancelled = false;
     services.dataSource
       .getModel()
       .then((model) => {
-        if (!cancelled) services.bus.emit("model.loaded", { model });
+        if (cancelled) return;
+        const issue = versionMismatch(model);
+        if (issue) services.bus.emit("model.error", { message: issue });
+        else services.bus.emit("model.loaded", { model });
       })
-      .catch((e) => console.error("Failed to load model", e));
+      .catch((e) => {
+        if (!cancelled)
+          services.bus.emit("model.error", {
+            message: `Failed to load the model: ${e instanceof Error ? e.message : String(e)}`,
+          });
+      });
     return () => {
       cancelled = true;
     };
@@ -109,6 +128,17 @@ export default function App() {
     api.onDidAddPanel((p) => services.bus.emit("panel.mounted", { panelId: p.id }));
     api.onDidRemovePanel((p) => services.bus.emit("panel.disposed", { panelId: p.id }));
   };
+
+  if (loadError) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-white p-8 text-center">
+        <div>
+          <div className="mb-1 text-sm font-semibold text-red-600">Could not load the architecture model</div>
+          <div className="text-sm text-slate-500">{loadError}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ServicesProvider value={services}>
