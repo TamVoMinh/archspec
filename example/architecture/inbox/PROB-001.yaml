@@ -15,3 +15,5 @@ constraints:
 tags:
   - urgent
   - production
+labels:
+  area: payments

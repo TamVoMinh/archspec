@@ -16,6 +16,7 @@ Every ADR file (`architecture/adr/ADR-XXX-name.md`) must contain:
 - date: 2026-04-06
 - superseded_by: ~
 - links: [PROB-001, PROB-003]
+- labels: area=payments, criticality=core   # optional — classification (see Classification doc)
 
 ## Context
 What situation led to this decision? Reference problem IDs.

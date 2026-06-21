@@ -33,6 +33,8 @@ sda = [
     "templates/**/*",
     "templates/**/.*",
     "templates/**/.github/**/*",
+    "assets/*.js",
+    "viewer/*.html",
 ]
 
 [tool.pytest.ini_options]

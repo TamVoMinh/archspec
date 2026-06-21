@@ -81,6 +81,35 @@ class TestFlatIndex:
         assert "systems" not in data
 
 
+class TestDependsOnEdges:
+
+    def test_service_nodes_carry_depends_on(self, flat_project: Path) -> None:
+        _write_services(
+            flat_project / "architecture" / "model" / "services.yaml",
+            {"api": {"depends_on": ["db", "cache"]}, "db": {}, "cache": {}},
+        )
+        result = runner.invoke(app, ["index", "--project-dir", str(flat_project)])
+        assert result.exit_code == 0
+
+        data = yaml.safe_load((flat_project / "architecture" / "index.yaml").read_text())
+        assert data["graph"]["api"]["depends_on"] == ["db", "cache"]
+        # Services without deps still carry an explicit empty list
+        assert data["graph"]["db"]["depends_on"] == []
+
+    def test_referenced_service_also_has_depends_on(self, flat_project: Path) -> None:
+        _write_problem(flat_project / "architecture" / "inbox", "PROB-001", services=["api"])
+        _write_services(
+            flat_project / "architecture" / "model" / "services.yaml",
+            {"api": {"depends_on": ["db"]}, "db": {}},
+        )
+        result = runner.invoke(app, ["index", "--project-dir", str(flat_project)])
+        assert result.exit_code == 0
+
+        api = yaml.safe_load((flat_project / "architecture" / "index.yaml").read_text())["graph"]["api"]
+        assert "PROB-001" in api["problems"]
+        assert api["depends_on"] == ["db"]
+
+
 class TestPartitionedIndex:
 
     def test_generates_per_partition_index(self, partitioned_project: Path) -> None:

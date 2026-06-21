@@ -13,3 +13,5 @@ services: list(str(), required=False)
 symptoms: list(str(), required=False)
 constraints: list(str(), required=False)
 tags: list(str(), required=False)
+# Classification labels (dimension -> value). Values validated by `sda check`.
+labels: map(str(), required=False)

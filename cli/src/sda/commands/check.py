@@ -18,9 +18,16 @@ from rich.table import Table
 
 from sda.discovery import ARCH_DIR, discover_partitions, discover_problem_files
 from sda.validators import CheckResult, Severity, errors, warnings
-from sda.validators.adr import validate_adrs, validate_adr_service_refs
-from sda.validators.services import validate_services, validate_draft_problems
+from sda.validators.adr import validate_adrs, validate_adr_service_refs, validate_adr_service_existence
+from sda.validators.services import (
+    validate_services,
+    validate_draft_problems,
+    validate_depends_on,
+    validate_problem_service_refs,
+    load_service_names,
+)
 from sda.validators.owners import validate_owners, validate_domain_coverage, get_triage_sla
+from sda.validators.classification import validate_labels
 
 console = Console()
 
@@ -126,7 +133,11 @@ def _flat_checks(pd: Path, sla: int) -> list[tuple[str, list[CheckResult]]]:
     return [
         ("ADR Lifecycle", validate_adrs(pd / ADR_DIR)),
         ("ADR → Service refs", validate_adr_service_refs(pd / ADR_DIR, pd / SERVICES_FILE)),
+        ("ADR service existence", validate_adr_service_existence(pd / ADR_DIR, pd / SERVICES_FILE, model_dir=pd / MODEL_DIR)),
         ("Service staleness", validate_services(pd / SERVICES_FILE, model_dir=pd / MODEL_DIR)),
+        ("Service dependencies", validate_depends_on(pd / SERVICES_FILE, model_dir=pd / MODEL_DIR)),
+        ("Problem service refs", validate_problem_service_refs(pd / INBOX_DIR, pd / SERVICES_FILE, model_dir=pd / MODEL_DIR)),
+        ("Classification labels", validate_labels(pd, pd / INBOX_DIR, [pd / MODEL_DIR], [pd / ADR_DIR], [])),
         ("Draft problem SLA", validate_draft_problems(pd / INBOX_DIR, sla_hours=sla)),
         ("OWNERS.yaml", validate_owners(pd / OWNERS_FILE)),
         ("Domain coverage", validate_domain_coverage(pd / OWNERS_FILE, pd / SERVICES_FILE, model_dir=pd / MODEL_DIR)),
@@ -158,14 +169,25 @@ def _partitioned_checks(
         if part_adr.exists():
             checks.append((f"{label} ADR Lifecycle", validate_adrs(part_adr)))
             checks.append((f"{label} ADR → Service refs", validate_adr_service_refs(part_adr, part_services)))
+            checks.append((f"{label} ADR service existence", validate_adr_service_existence(part_adr, part_services, model_dir=part_model)))
 
         if part_model.exists():
             checks.append((f"{label} Service staleness", validate_services(part_services, model_dir=part_model)))
+            checks.append((f"{label} Service dependencies", validate_depends_on(part_services, model_dir=part_model)))
 
     # system: field validation
     checks.append(("Problem system: field", _validate_system_fields(pd / INBOX_DIR, partition_names)))
+    # Classification labels across problems, services, ADRs, and partitions
+    part_models = [p / "model" for _, p in partitions]
+    adr_dirs = [pd / ADR_DIR] + [p / "adr" for _, p in partitions]
+    part_paths = [p for _, p in partitions]
+    checks.append(("Classification labels", validate_labels(pd, pd / INBOX_DIR, part_models, adr_dirs, part_paths)))
 
     # Cross-cutting checks
+    union_services: set[str] = set()
+    for _name, part_path in partitions:
+        union_services |= load_service_names(part_path / "model" / "services.yaml", model_dir=part_path / "model")
+    checks.append(("Problem service refs", validate_problem_service_refs(pd / INBOX_DIR, pd / SERVICES_FILE, known=union_services)))
     checks.append(("Draft problem SLA", validate_draft_problems(pd / INBOX_DIR, sla_hours=sla)))
     checks.append(("OWNERS.yaml", validate_owners(pd / OWNERS_FILE)))
 

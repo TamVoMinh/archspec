@@ -14,3 +14,4 @@ symptoms: []                  # Observable symptoms of the problem
 
 constraints: []               # Known constraints (optional)
 tags: []                      # Free-form tags (optional)
+labels: {}                    # Classification dimensions, e.g. { area: payments } (optional)

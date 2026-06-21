@@ -27,13 +27,21 @@ graph:
     type: service
     problems: [PROB-001]
     adrs: [ADR-012]
+    depends_on: [database]
 ```
 
 Node types:
 - **problem** — an inbox entry (from flat or folder layout)
 - **adr** — a decision record
-- **service** — a service referenced by any problem or ADR (may include a `group` field)
+- **service** — every service in `services.yaml` (referenced or not); may include a `group` field and a `depends_on` list of the services it depends on
 - **group** — a service group from hierarchical model, with `children` listing member services
+
+### Service dependencies (`depends_on`)
+
+Every service node carries its declared `depends_on` list, so the graph models the
+service-to-service dependency map — not just which services a problem or ADR touches.
+`sda check` validates that every `depends_on` target is a registered service (error) and
+that problem/ADR service references exist (warning).
 
 ### Hierarchical Services
 
@@ -64,6 +72,48 @@ sda index --validate         # non-blocking: check if the committed index is fre
 ```
 
 The graph is regenerated in CI on every push. A stale index triggers a warning (non-blocking by default).
+
+---
+
+## Visualizing the Graph
+
+`sda graph` offers three offline visualizations — all bundled and inlined, no server, no CDN:
+
+```bash
+sda graph static            # single-file, zero-dependency interactive graph (Cytoscape)
+sda graph view              # self-contained dockview viewer (graph + docs + diagrams + search)
+sda graph serve             # local read-only server for the viewer; reflects live edits
+```
+
+All show every service (the full registry) and all four edge types — problem→ADR,
+problem→service, ADR→service, and service→service `depends_on`.
+
+**`sda graph static`** writes one self-contained `architecture/graph.html` with a fullscreen
+toggle and a **service hotspots** sidebar — the lightest option, opens by double-click.
+
+**`sda graph view`** exports a richer self-contained file: a dockview workbench where you can
+read ADRs/problems as rendered Markdown (with Mermaid diagrams and syntax-highlighted code),
+fuzzy-search nodes, and open documents beside the graph — all offline.
+
+**`sda graph serve`** runs the same workbench from a local read-only server
+(`GET /model`, `/doc/<id>`); it rebuilds per request, so edits to your architecture files show
+up on refresh.
+
+```bash
+sda graph view --output g.html --open   # custom path, open in browser
+sda graph serve --port 4173 --open      # serve and open
+```
+
+Generated HTML is git-ignored by default (`sda init` adds the rule). Either regenerate locally
+with `sda build`, or build it in CI as a published artifact rather than committing it.
+
+### One-command rebuild
+
+```bash
+sda build       # regenerate index.yaml + graph.html together
+```
+
+Use `sda build` after any source edit so the index and the visualization never drift.
 
 ---
 

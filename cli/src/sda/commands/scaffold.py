@@ -29,7 +29,7 @@ CREATED: list[str] = []
 def _templates_dir() -> Path:
     """Locate bundled templates — works both installed and from source."""
     try:
-        ref = resources.files("aos") / "templates"
+        ref = resources.files("sda") / "templates"
         # Materialise to a real path
         with resources.as_file(ref) as p:
             if p.exists():
@@ -46,6 +46,25 @@ def _copy_template(src: Path, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dest)
     CREATED.append(str(dest))
+
+
+_GITIGNORE_BLOCK = (
+    "# Generated SDA artifacts (regenerate with `sda build`)\n"
+    "architecture/graph.html\n"
+    "architecture/**/graph.html\n"
+)
+
+
+def _ensure_gitignore(project: Path) -> None:
+    """Add the generated-graph ignore rules to the project's .gitignore (idempotent)."""
+    gitignore = project / ".gitignore"
+    existing = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
+    if "architecture/graph.html" in existing:
+        return
+    prefix = "" if not existing or existing.endswith("\n") else "\n"
+    sep = "\n" if existing else ""
+    gitignore.write_text(existing + prefix + sep + _GITIGNORE_BLOCK, encoding="utf-8")
+    CREATED.append(".gitignore")
 
 
 def init(
@@ -70,8 +89,9 @@ def init(
         ("architecture/adr/TEMPLATE.md", "architecture/adr/TEMPLATE.md"),
         ("architecture/inbox/PROB-TEMPLATE.yaml", "architecture/inbox/PROB-TEMPLATE.yaml"),
         ("architecture/model/services.yaml", "architecture/model/services.yaml"),
+        ("architecture/classification.yaml", "architecture/classification.yaml"),
         ("OWNERS.yaml", "OWNERS.yaml"),
-        ("workflows/aos-checks.yml", ".github/workflows/aos-checks.yml"),
+        ("workflows/sda-checks.yml", ".github/workflows/sda-checks.yml"),
     ]
 
     for src_rel, dest_rel in template_files:
@@ -93,6 +113,9 @@ def init(
             encoding="utf-8",
         )
         CREATED.append("architecture/index.yaml")
+
+    # Keep generated HTML graphs out of git (regenerate with `sda build`)
+    _ensure_gitignore(project)
 
     created_list = "\n".join(f"  [green]+[/green] {f}" for f in CREATED) or "  [dim](no new files)[/dim]"
 

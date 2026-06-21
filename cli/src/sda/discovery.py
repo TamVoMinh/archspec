@@ -16,6 +16,17 @@ INBOX_DIR = Path("architecture/inbox")
 MODEL_DIR = Path("architecture/model")
 SERVICES_FILENAME = "services.yaml"
 TEMPLATE_FILENAME = "PROB-TEMPLATE.yaml"
+PARTITION_META_FILENAME = "partition.yaml"
+
+
+def load_partition_labels(part_path: Path) -> dict:
+    """Classification labels for a partition/system, from architecture/<partition>/partition.yaml."""
+    f = part_path / PARTITION_META_FILENAME
+    if not f.exists():
+        return {}
+    with f.open(encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    return data.get("labels") or {}
 
 _PROB_ID_RE = re.compile(r"PROB-(\d+)", re.IGNORECASE)
 

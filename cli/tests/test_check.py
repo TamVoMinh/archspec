@@ -22,6 +22,19 @@ def _write_services(path: Path, services: dict) -> None:
     path.write_text(yaml.dump({"services": services}), encoding="utf-8")
 
 
+def _write_owners(project: Path) -> None:
+    """Minimal valid OWNERS.yaml so OWNERS validation contributes no errors."""
+    owners = {
+        "roles": {
+            "architecture_lead": {"name": "Real Lead", "email": "lead@example.com", "triage_sla_hours": 48},
+            "contributors": [],
+        },
+        "triage_policy": {"inbox_sla_hours": 48, "adr_review_required_approvers": 2, "adr_acceptance_requires": "architecture_lead"},
+        "domain_ownership": {},
+    }
+    (project / "OWNERS.yaml").write_text(yaml.dump(owners), encoding="utf-8")
+
+
 @pytest.fixture
 def flat_project(tmp_path: Path) -> Path:
     (tmp_path / "architecture" / "inbox").mkdir(parents=True)
@@ -54,6 +67,54 @@ class TestFlatCheck:
         _write_problem(flat_project / "architecture" / "inbox", "PROB-001")
         result = runner.invoke(app, ["check", "--project-dir", str(flat_project)])
         assert "system:" not in result.output
+
+
+class TestServiceReferenceValidation:
+
+    def test_missing_depends_on_target_is_error(self, flat_project: Path) -> None:
+        _write_owners(flat_project)
+        _write_services(
+            flat_project / "architecture" / "model" / "services.yaml",
+            {"api": {"depends_on": ["ghost"]}},
+        )
+        result = runner.invoke(app, ["check", "--strict", "--project-dir", str(flat_project)])
+        assert result.exit_code == 1
+        normalized = " ".join(result.output.split())
+        assert "ghost" in normalized
+        assert "not a registered service" in normalized
+
+    def test_valid_depends_on_is_clean(self, flat_project: Path) -> None:
+        _write_owners(flat_project)
+        _write_services(
+            flat_project / "architecture" / "model" / "services.yaml",
+            {"api": {"depends_on": ["db"]}, "db": {}},
+        )
+        result = runner.invoke(app, ["check", "--strict", "--project-dir", str(flat_project)])
+        assert result.exit_code == 0
+        assert "not a registered service" not in result.output
+
+    def test_unknown_problem_service_ref_is_warning(self, flat_project: Path) -> None:
+        _write_owners(flat_project)
+        _write_services(flat_project / "architecture" / "model" / "services.yaml", {"api": {}})
+        inbox = flat_project / "architecture" / "inbox"
+        content = {"id": "PROB-001", "title": "t", "status": "active", "source": "adhoc",
+                   "type": "other", "created_at": "2026-04-21", "services": ["nope"]}
+        (inbox / "PROB-001.yaml").write_text(yaml.dump(content), encoding="utf-8")
+        result = runner.invoke(app, ["check", "--strict", "--project-dir", str(flat_project)])
+        # warning only — does not fail --strict
+        assert result.exit_code == 0
+        assert "unknown service 'nope'" in " ".join(result.output.split())
+
+    def test_partitioned_depends_on_validation(self, partitioned_project: Path) -> None:
+        _write_owners(partitioned_project)
+        _write_services(
+            partitioned_project / "architecture" / "payments" / "model" / "services.yaml",
+            {"svc-orders": {"depends_on": ["missing"]}},
+        )
+        _write_services(partitioned_project / "architecture" / "catalog" / "model" / "services.yaml", {})
+        result = runner.invoke(app, ["check", "--strict", "--project-dir", str(partitioned_project)])
+        assert result.exit_code == 1
+        assert "missing" in result.output
 
 
 class TestPartitionedCheck:

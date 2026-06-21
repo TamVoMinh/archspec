@@ -6,6 +6,7 @@ services:
       - billing
     owner: architect@company.com
     last_reviewed: 2026-04-06
+    labels: { area: payments, criticality: core }
 
   billing:
     type: api
@@ -13,13 +14,16 @@ services:
       - database
     owner: architect@company.com
     last_reviewed: 2026-04-06
+    labels: { area: payments, criticality: core }
 
   database:
     type: postgres
     owner: architect@company.com
     last_reviewed: 2026-04-06
+    labels: { area: platform, criticality: supporting, lifecycle: active }
 
   auth:
     type: api
     owner: architect@company.com
     last_reviewed: 2026-04-06
+    labels: { area: platform, criticality: generic }

@@ -1,0 +1,17 @@
+# Classification dimensions for labeling problems, services, ADRs, and partitions.
+# Optional — without this file the core ships neutral defaults:
+#   area        (open — any value)
+#   criticality (open — any value)
+#   lifecycle   (active | deprecated | retired)
+#
+# Declare a dimension with `values` to close its vocabulary (validated by `sda check`).
+# Omit `values` (or set ~) for an open dimension. Methodology packs (e.g. DDD) supply
+# vocabularies here without any core change.
+#
+# dimensions:
+#   criticality:
+#     values: [core, supporting, generic]   # DDD subdomain classification
+#   area:
+#     values: ~                              # open — any value
+#   team:
+#     values: ~                              # a project-defined dimension

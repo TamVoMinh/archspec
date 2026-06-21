@@ -149,8 +149,12 @@ sda init
 |---|---|
 | `sda init` | Scaffold a new SDA project from templates |
 | `sda capture "title" [--system SYS] [--attach FILE]` | Create a draft problem in `architecture/inbox/` (with optional system tag and attachments) |
-| `sda check [--strict]` | Validate ADR lifecycle, staleness, and ownership |
-| `sda index [--validate]` | Generate or validate `architecture/index.yaml` |
+| `sda check [--strict]` | Validate ADR lifecycle, staleness, ownership, and service references (`depends_on` + problem/ADR refs) |
+| `sda index [--validate]` | Generate or validate `architecture/index.yaml` (includes service `depends_on` edges) |
+| `sda graph static [--output PATH]` | Single-file, zero-dependency interactive graph (offline) |
+| `sda graph view [--output PATH] [--open]` | Self-contained dockview viewer — graph + documents + diagrams + search (offline) |
+| `sda graph serve [--port N] [--open]` | Local read-only server for the dockview viewer; reflects live edits |
+| `sda build [--open]` | Regenerate every derived artifact in one step — index + graph |
 | `sda status` | Health overview — problems, ADRs, services, index age |
 
 ---
@@ -162,6 +166,7 @@ sda init
 → **[Multi-Team Setup](docs/guides/multi-team.md)** — domain ownership and conflict resolution<br>
 → **[Migration to Partitions](docs/guides/migration-to-partitions.md)** — flat to multi-partition layout<br>
 → **[Problems](docs/concepts/problems.md)** — inbox schema and triage lifecycle<br>
+→ **[Classification](docs/concepts/classification.md)** — labels, dimensions, and methodology packs<br>
 → **[Decisions](docs/concepts/decisions.md)** — ADR format, state machine, PR labels<br>
 → **[Knowledge Graph](docs/concepts/knowledge-graph.md)** — querying architecture with `yq`<br>
 → **[Governance](docs/concepts/governance.md)** — OWNERS.yaml, CODEOWNERS, review policy<br>

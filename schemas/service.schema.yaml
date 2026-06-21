@@ -10,3 +10,6 @@ service:
   owner: str(required=False)
   last_reviewed: day(required=False)
   deprecated: bool(required=False)
+  # Classification labels (dimension -> value). Structural only here; values are
+  # validated against the configured vocabulary by `sda check`.
+  labels: map(str(), required=False)

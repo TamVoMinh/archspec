@@ -104,6 +104,23 @@ def get_adr_status(content: str) -> str | None:
     return meta.get("status")
 
 
+def parse_label_string(raw: str) -> dict:
+    """Parse an ADR metadata `labels` line: `area=payments, criticality=core`."""
+    out: dict = {}
+    for pair in raw.split(","):
+        pair = pair.strip()
+        if "=" in pair:
+            k, v = pair.split("=", 1)
+            out[k.strip()] = v.strip()
+    return out
+
+
+def get_labels(content: str) -> dict:
+    """Classification labels declared in an ADR's ## Metadata block."""
+    raw = _parse_metadata(content).get("labels")
+    return parse_label_string(raw) if isinstance(raw, str) else {}
+
+
 def get_affected_services(content: str) -> list[str]:
     match = re.search(r"##\s+Affected Services\s*\n((?:\s*-\s+.*\n?)*)", content, re.MULTILINE)
     if not match:
@@ -140,6 +157,36 @@ def validate_adr_service_refs(adr_dir: Path, services_file: Path) -> list[CheckR
                 results.append(CheckResult(
                     Severity.ERROR,
                     f"Accepted ADR references deprecated service '{svc}'",
+                    adr_path,
+                ))
+
+    return results
+
+
+def validate_adr_service_existence(
+    adr_dir: Path,
+    services_file: Path,
+    *,
+    model_dir: Path | None = None,
+) -> list[CheckResult]:
+    """Warn when an ADR's ## Affected Services lists a service not in the registry."""
+    from sda.validators.services import load_service_names
+
+    results: list[CheckResult] = []
+    if not adr_dir.exists():
+        return results
+
+    known = load_service_names(services_file, model_dir=model_dir)
+
+    for adr_path in sorted(adr_dir.glob("*.md")):
+        if adr_path.name == TEMPLATE_FILENAME:
+            continue
+        content = adr_path.read_text(encoding="utf-8")
+        for svc in get_affected_services(content):
+            if svc not in known:
+                results.append(CheckResult(
+                    Severity.WARNING,
+                    f"ADR references unknown service '{svc}' in ## Affected Services",
                     adr_path,
                 ))
 

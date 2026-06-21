@@ -39,7 +39,13 @@ constraints:
 tags:
   - urgent
   - production
+
+labels:                 # optional — classification dimensions (validated by `sda check`)
+  area: payments
 ```
+
+`tags` are free-form and unvalidated. `labels` classify the problem along configured
+dimensions (e.g. `area`, `criticality`) — see [Classification](classification.md).
 
 ### The `system:` Field
 

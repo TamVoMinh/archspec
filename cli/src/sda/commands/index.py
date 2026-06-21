@@ -15,7 +15,7 @@ import typer
 from rich import print as rprint
 from rich.table import Table
 
-from sda.discovery import ARCH_DIR, INBOX_DIR, discover_partitions, discover_problem_files, load_all_services
+from sda.discovery import ARCH_DIR, INBOX_DIR, discover_partitions, discover_problem_files, load_all_services, load_partition_labels
 
 ADR_DIR = Path("architecture/adr")
 MODEL_DIR = Path("architecture/model")
@@ -86,6 +86,8 @@ def _build_graph(
             "status": data.get("status", "active"),
             "linked_adrs": [],
         }
+        if data.get("labels"):
+            graph[prob_id]["labels"] = data["labels"]
         for svc in services:
             if prob_id not in service_index[svc]["problems"]:
                 service_index[svc]["problems"].append(prob_id)
@@ -112,6 +114,12 @@ def _build_graph(
                 "linked_services": adr_services,
                 "superseded_by": meta.get("superseded_by"),
             }
+            raw_labels = meta.get("labels")
+            if isinstance(raw_labels, str):
+                from sda.validators.adr import parse_label_string
+                adr_labels = parse_label_string(raw_labels)
+                if adr_labels:
+                    graph[adr_id]["labels"] = adr_labels
             for prob_id in prob_links:
                 if prob_id in graph and adr_id not in graph[prob_id]["linked_adrs"]:
                     graph[prob_id]["linked_adrs"].append(adr_id)
@@ -128,11 +136,16 @@ def _build_graph(
             "type": "service",
             "problems": svc_data["problems"],
             "adrs": svc_data["adrs"],
+            "depends_on": [],
         }
         if svc_name in all_services:
-            group = all_services[svc_name].get("_group")
+            meta = all_services[svc_name]
+            group = meta.get("_group")
             if group is not None:
                 node["group"] = group
+            node["depends_on"] = list(meta.get("depends_on") or [])
+            if meta.get("labels"):
+                node["labels"] = meta["labels"]
         graph[svc_name] = node
 
     # Add model-defined services not yet referenced
@@ -142,10 +155,13 @@ def _build_graph(
                 "type": "service",
                 "problems": [],
                 "adrs": [],
+                "depends_on": list(meta.get("depends_on") or []),
             }
             group = meta.get("_group")
             if group is not None:
                 node["group"] = group
+            if meta.get("labels"):
+                node["labels"] = meta["labels"]
             graph[svc_name] = node
 
     # Add group nodes
@@ -192,6 +208,9 @@ def _render_manifest(
             "adrs": n_a,
             "services": n_s,
         }
+        part_labels = load_partition_labels(part_path)
+        if part_labels:
+            data["partitions"][part_name]["labels"] = part_labels
 
     # Unscoped nodes (root ADRs, unrouted problems) — inline since they're small
     unscoped_nodes = {
@@ -238,7 +257,7 @@ def _merge_into(target: dict, source: dict) -> None:
     for key, node in source.items():
         if key in target and target[key].get("type") == "service" and node.get("type") == "service":
             existing = target[key]
-            for field in ("problems", "adrs"):
+            for field in ("problems", "adrs", "depends_on"):
                 merged = list(existing.get(field, []))
                 for item in node.get(field, []):
                     if item not in merged:
@@ -251,13 +270,77 @@ def _merge_into(target: dict, source: dict) -> None:
             target[key] = node
 
 
+def _build_partitioned_graphs(
+    project_dir: Path,
+    partitions: list[tuple[str, Path]],
+) -> tuple[dict, list[tuple[str, Path, dict]]]:
+    """Build the master graph plus each partition's scoped graph (no file writes).
+
+    Returns:
+        - master_graph: merged, system-annotated graph including root ADRs and unrouted problems
+        - part_graphs: list of (partition_name, partition_path, partition_graph)
+    """
+    partition_names = {name for name, _ in partitions}
+    inbox = project_dir / INBOX_DIR
+    routed, unrouted = _route_problems(inbox, partition_names)
+
+    master_graph: dict = {}
+    part_graphs: list[tuple[str, Path, dict]] = []
+
+    for part_name, part_path in partitions:
+        part_graph = _build_graph(
+            project_dir,
+            adr_dir=part_path / "adr",
+            model_dir=part_path / "model",
+            problem_files=routed.get(part_name, []),
+        )
+        part_graphs.append((part_name, part_path, part_graph))
+        # Merge into master with system annotations
+        _merge_into(master_graph, _annotate_graph(part_graph, part_name))
+
+    # Add root-level ADRs to master only
+    root_adr_dir = project_dir / ADR_DIR
+    if root_adr_dir.exists():
+        root_adr_graph = _build_graph(
+            project_dir,
+            adr_dir=root_adr_dir,
+            model_dir=root_adr_dir / "_no_model",  # no services from root
+            problem_files=[],
+        )
+        _merge_into(master_graph, root_adr_graph)
+
+    # Add unrouted problems to master only
+    if unrouted:
+        unrouted_graph = _build_graph(
+            project_dir,
+            adr_dir=inbox / "_no_adr",  # no ADRs
+            model_dir=inbox / "_no_model",  # no services
+            problem_files=unrouted,
+        )
+        _merge_into(master_graph, unrouted_graph)
+
+    return master_graph, part_graphs
+
+
+def assemble_graph(project_dir: Path) -> tuple[dict, list[tuple[str, Path]]]:
+    """Build the full knowledge graph for a project without writing any files.
+
+    Returns (graph, partitions). In flat mode `graph` is the flat graph and
+    `partitions` is empty; in partitioned mode `graph` is the merged, system-annotated
+    master graph. Shared by `sda index`, `sda graph`, and `sda build`.
+    """
+    partitions = discover_partitions(project_dir / ARCH_DIR)
+    if not partitions:
+        return _build_graph(project_dir), partitions
+    master_graph, _ = _build_partitioned_graphs(project_dir, partitions)
+    return master_graph, partitions
+
+
 def index(
     validate: Annotated[bool, typer.Option("--validate", help="Validate committed index is up to date (non-blocking)")] = False,
     project_dir: Annotated[Path, typer.Option(help="Project root directory")] = Path("."),
 ) -> None:
     """Generate or validate the architecture/index.yaml knowledge graph."""
-    from rich.console import Console
-
     arch_dir = project_dir / ARCH_DIR
     partitions = discover_partitions(arch_dir)
     index_file = project_dir / INDEX_FILE
@@ -277,51 +360,11 @@ def index(
     else:
         # ── Partitioned mode ──
         partition_names = {name for name, _ in partitions}
-        inbox = project_dir / INBOX_DIR
-        routed, unrouted = _route_problems(inbox, partition_names)
+        master_graph, part_graphs = _build_partitioned_graphs(project_dir, partitions)
 
-        master_graph: dict = {}
-
-        for part_name, part_path in partitions:
-            part_adr_dir = part_path / "adr"
-            part_model_dir = part_path / "model"
-            part_problems = routed.get(part_name, [])
-
-            part_graph = _build_graph(
-                project_dir,
-                adr_dir=part_adr_dir,
-                model_dir=part_model_dir,
-                problem_files=part_problems,
-            )
-
-            # Write per-partition index
-            part_index_file = part_path / "index.yaml"
-            part_output = _render(part_graph)
-            part_index_file.write_text(part_output, encoding="utf-8")
-
-            # Merge into master with system annotations
-            _merge_into(master_graph, _annotate_graph(part_graph, part_name))
-
-        # Add root-level ADRs to master only
-        root_adr_dir = project_dir / ADR_DIR
-        if root_adr_dir.exists():
-            root_adr_graph = _build_graph(
-                project_dir,
-                adr_dir=root_adr_dir,
-                model_dir=root_adr_dir / "_no_model",  # no services from root
-                problem_files=[],
-            )
-            _merge_into(master_graph, root_adr_graph)
-
-        # Add unrouted problems to master only
-        if unrouted:
-            unrouted_graph = _build_graph(
-                project_dir,
-                adr_dir=inbox / "_no_adr",  # no ADRs
-                model_dir=inbox / "_no_model",  # no services
-                problem_files=unrouted,
-            )
-            _merge_into(master_graph, unrouted_graph)
+        # Write per-partition indexes
+        for _part_name, part_path, part_graph in part_graphs:
+            (part_path / "index.yaml").write_text(_render(part_graph), encoding="utf-8")
 
         # Write master index as slim manifest
         systems_list = sorted(partition_names)

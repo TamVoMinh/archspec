@@ -4,6 +4,7 @@ services:
   #   depends_on:    list of other service names
   #   owner:         email of the domain owner
   #   last_reviewed: date this entry was last reviewed (YYYY-MM-DD)
+  #   labels:        classification dimensions (validated against architecture/classification.yaml)
   #
   # Example:
   # api-gateway:
@@ -11,3 +12,4 @@ services:
   #   depends_on: [auth, billing]
   #   owner: architect@company.com
   #   last_reviewed: 2026-04-06
+  #   labels: { area: payments, criticality: core }

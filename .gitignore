@@ -16,3 +16,17 @@ build/
 
 # Env
 .env
+
+# Node / frontend
+node_modules/
+web/dist/
+packages/*/dist/
+.vite/
+*.tsbuildinfo
+
+# Built viewer bundle staged into the wheel (produced by scripts/build-viewer.sh)
+cli/src/sda/viewer/
+
+# Generated SDA artifacts (regenerate with `sda build`)
+**/architecture/graph.html
+**/architecture/**/graph.html

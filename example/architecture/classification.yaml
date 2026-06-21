@@ -1,0 +1,7 @@
+# Classification dimensions for this example project.
+# `criticality` is closed (validated); `area` is open; `lifecycle` uses the neutral default.
+dimensions:
+  criticality:
+    values: [core, supporting, generic]
+  area:
+    values: ~

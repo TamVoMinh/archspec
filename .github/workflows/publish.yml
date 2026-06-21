@@ -31,10 +31,40 @@ jobs:
       - name: Run tests
         run: pytest cli/tests/ -v --tb=short
 
+  # ─── Build, typecheck & test the web viewer ───────────────────────────────
+  web:
+    name: Web (typecheck, test, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm --filter @archspec/web typecheck
+
+      - name: Test
+        run: pnpm --filter @archspec/web test
+
+      - name: Build
+        run: pnpm --filter @archspec/web build
+
   # ─── Build & publish to PyPI on GitHub Release ────────────────────────────
   publish:
     name: Publish to PyPI
-    needs: test
+    needs: [test, web]
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'published'
 
@@ -48,10 +78,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: Build & stage the web viewer bundle
+        run: ./scripts/build-viewer.sh
 
       - name: Install build tools
         run: pip install build
