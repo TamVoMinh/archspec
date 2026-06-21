@@ -1,0 +1,20 @@
+id: PROB-007
+title: Monolithic billing and shared database block new domains
+source: meeting
+type: reliability
+created_at: 2026-04-20
+status: resolved
+services:
+  - billing
+  - database
+symptoms:
+  - every new capability (orders, inventory, search) had to extend the billing monolith
+  - the shared database is a single point of contention and failure
+  - team ownership is unclear because everything lives in one service
+constraints:
+  - migration must be incremental — no big-bang cutover
+tags:
+  - scaling
+  - decomposition
+labels:
+  area: payments

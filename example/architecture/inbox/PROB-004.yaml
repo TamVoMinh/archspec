@@ -1,0 +1,18 @@
+id: PROB-004
+title: Product search is slow and returns stale results
+source: github
+type: performance
+created_at: 2026-03-10
+status: active
+services:
+  - search
+  - catalog
+symptoms:
+  - search queries run LIKE scans against catalog-db
+  - new products take up to an hour to appear in results
+constraints:
+  - catalog-db is already the storefront bottleneck
+tags:
+  - ux
+labels:
+  area: storefront

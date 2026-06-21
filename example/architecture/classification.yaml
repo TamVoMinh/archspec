@@ -1,7 +1,7 @@
-# Classification dimensions for this example project.
-# `criticality` is closed (validated); `area` is open; `lifecycle` uses the neutral default.
+# Classification dimensions for the shopping-system example.
+# Both `area` and `criticality` are closed vocabularies — `sda check` validates values.
 dimensions:
+  area:
+    values: [storefront, fulfillment, payments, platform]
   criticality:
     values: [core, supporting, generic]
-  area:
-    values: ~

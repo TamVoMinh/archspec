@@ -8,6 +8,68 @@ graph:
     - PROB-001
     linked_services:
     - billing
+    - database
+    status: superseded
+    superseded_by: ADR-006
+    type: adr
+  ADR-002:
+    labels:
+      area: fulfillment
+      criticality: core
+    linked_problems:
+    - PROB-002
+    linked_services:
+    - inventory
+    - orders
+    status: accepted
+    superseded_by: null
+    type: adr
+  ADR-003:
+    labels:
+      area: payments
+      criticality: core
+    linked_problems:
+    - PROB-003
+    linked_services:
+    - payments
+    status: accepted
+    superseded_by: null
+    type: adr
+  ADR-004:
+    labels:
+      area: storefront
+      criticality: supporting
+    linked_problems:
+    - PROB-004
+    linked_services:
+    - search
+    - catalog
+    status: accepted
+    superseded_by: null
+    type: adr
+  ADR-005:
+    labels:
+      area: platform
+      criticality: supporting
+    linked_problems:
+    - PROB-005
+    linked_services:
+    - notifications
+    status: proposed
+    superseded_by: null
+    type: adr
+  ADR-006:
+    labels:
+      area: payments
+      criticality: core
+    linked_problems:
+    - PROB-001
+    - PROB-007
+    linked_services:
+    - payments
+    - orders
+    - inventory
+    - events
     status: accepted
     superseded_by: null
     type: adr
@@ -16,23 +78,94 @@ graph:
       area: payments
     linked_adrs:
     - ADR-001
+    - ADR-006
     services:
     - api-gateway
     - billing
+    status: resolved
+    type: problem
+  PROB-002:
+    labels:
+      area: fulfillment
+    linked_adrs:
+    - ADR-002
+    services:
+    - inventory
+    - orders
+    status: resolved
+    type: problem
+  PROB-003:
+    labels:
+      area: payments
+    linked_adrs:
+    - ADR-003
+    services:
+    - payments
+    - payment-gateway
+    status: resolved
+    type: problem
+  PROB-004:
+    labels:
+      area: storefront
+    linked_adrs:
+    - ADR-004
+    services:
+    - search
+    - catalog
     status: active
+    type: problem
+  PROB-005:
+    labels:
+      area: platform
+    linked_adrs:
+    - ADR-005
+    services:
+    - notifications
+    status: active
+    type: problem
+  PROB-006:
+    labels:
+      area: fulfillment
+    linked_adrs: []
+    services:
+    - orders
+    - orders-db
+    status: draft
+    type: problem
+  PROB-007:
+    labels:
+      area: payments
+    linked_adrs:
+    - ADR-006
+    services:
+    - billing
+    - database
+    status: resolved
     type: problem
   api-gateway:
     adrs: []
     depends_on:
+    - catalog
+    - cart
+    - orders
     - auth
-    - billing
+    - search
     labels:
-      area: payments
+      area: storefront
       criticality: core
     problems:
     - PROB-001
     type: service
   auth:
+    adrs: []
+    depends_on:
+    - auth-db
+    labels:
+      area: platform
+      criticality: generic
+    problems: []
+    type: service
+  auth-db:
     adrs: []
     depends_on: []
     labels:
@@ -48,15 +181,208 @@ graph:
     labels:
       area: payments
       criticality: core
+      lifecycle: retired
     problems:
     - PROB-001
+    - PROB-007
+    type: service
+  carrier-api:
+    adrs: []
+    depends_on: []
+    labels:
+      area: fulfillment
+      criticality: supporting
+    problems: []
+    type: service
+  cart:
+    adrs: []
+    depends_on:
+    - cart-cache
+    - catalog
+    labels:
+      area: storefront
+      criticality: core
+    problems: []
+    type: service
+  cart-cache:
+    adrs: []
+    depends_on: []
+    labels:
+      area: storefront
+      criticality: supporting
+    problems: []
+    type: service
+  catalog:
+    adrs:
+    - ADR-004
+    depends_on:
+    - catalog-db
+    labels:
+      area: storefront
+      criticality: core
+    problems:
+    - PROB-004
+    type: service
+  catalog-db:
+    adrs: []
+    depends_on: []
+    labels:
+      area: storefront
+      criticality: supporting
+    problems: []
     type: service
   database:
+    adrs:
+    - ADR-001
+    depends_on: []
+    labels:
+      area: platform
+      criticality: core
+      lifecycle: retired
+    problems:
+    - PROB-007
+    type: service
+  email-provider:
     adrs: []
     depends_on: []
     labels:
       area: platform
+      criticality: generic
+    problems: []
+    type: service
+  events:
+    adrs:
+    - ADR-006
+    depends_on: []
+    labels:
+      area: platform
       criticality: supporting
-      lifecycle: active
+    problems: []
+    type: service
+  inventory:
+    adrs:
+    - ADR-002
+    - ADR-006
+    depends_on:
+    - inventory-db
+    labels:
+      area: fulfillment
+      criticality: core
+    problems:
+    - PROB-002
+    type: service
+  inventory-db:
+    adrs: []
+    depends_on: []
+    labels:
+      area: fulfillment
+      criticality: core
+    problems: []
+    type: service
+  notifications:
+    adrs:
+    - ADR-005
+    depends_on:
+    - events
+    - email-provider
+    labels:
+      area: platform
+      criticality: supporting
+    problems:
+    - PROB-005
+    type: service
+  orders:
+    adrs:
+    - ADR-002
+    - ADR-006
+    depends_on:
+    - orders-db
+    - inventory
+    - payments
+    - events
+    labels:
+      area: fulfillment
+      criticality: core
+    problems:
+    - PROB-002
+    - PROB-006
+    type: service
+  orders-db:
+    adrs: []
+    depends_on: []
+    labels:
+      area: fulfillment
+      criticality: core
+    problems:
+    - PROB-006
+    type: service
+  payment-gateway:
+    adrs: []
+    depends_on: []
+    labels:
+      area: payments
+      criticality: core
+    problems:
+    - PROB-003
+    type: service
+  payments:
+    adrs:
+    - ADR-003
+    - ADR-006
+    depends_on:
+    - payments-db
+    - payment-gateway
+    labels:
+      area: payments
+      criticality: core
+    problems:
+    - PROB-003
+    type: service
+  payments-db:
+    adrs: []
+    depends_on: []
+    labels:
+      area: payments
+      criticality: core
+    problems: []
+    type: service
+  recommendations:
+    adrs: []
+    depends_on:
+    - catalog-db
+    - events
+    labels:
+      area: storefront
+      criticality: generic
+    problems: []
+    type: service
+  search:
+    adrs:
+    - ADR-004
+    depends_on:
+    - search-index
+    - catalog-db
+    labels:
+      area: storefront
+      criticality: supporting
+    problems:
+    - PROB-004
+    type: service
+  search-index:
+    adrs: []
+    depends_on: []
+    labels:
+      area: storefront
+      criticality: supporting
+    problems: []
+    type: service
+  shipping:
+    adrs: []
+    depends_on:
+    - orders-db
+    - carrier-api
+    labels:
+      area: fulfillment
+      criticality: supporting
     problems: []
     type: service

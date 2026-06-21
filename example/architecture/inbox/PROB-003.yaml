@@ -1,0 +1,19 @@
+id: PROB-003
+title: Payment provider outage caused failed checkouts
+source: jira
+type: reliability
+created_at: 2026-02-18
+status: resolved
+services:
+  - payments
+  - payment-gateway
+symptoms:
+  - 45-minute provider outage failed ~2,100 checkouts
+  - no retry or fallback; failures surfaced directly to shoppers
+constraints:
+  - PCI scope must not expand
+tags:
+  - incident
+  - third-party
+labels:
+  area: payments

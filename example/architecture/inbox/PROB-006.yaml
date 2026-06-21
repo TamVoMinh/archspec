@@ -1,0 +1,17 @@
+id: PROB-006
+title: orders-db approaching write capacity
+source: adhoc
+type: cost
+created_at: 2026-06-15
+status: draft
+services:
+  - orders
+  - orders-db
+symptoms:
+  - write IOPS at 80% of the provisioned ceiling at peak
+  - vertical scaling cost is climbing faster than order volume
+constraints: []
+tags:
+  - scaling
+labels:
+  area: fulfillment

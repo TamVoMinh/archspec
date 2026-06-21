@@ -1,29 +1,155 @@
 services:
-  api-gateway:
-    type: api
-    depends_on:
-      - auth
-      - billing
-    owner: architect@company.com
-    last_reviewed: 2026-04-06
-    labels: { area: payments, criticality: core }
-
+  # ── Legacy (retired) — kept as history; decomposed by ADR-006 ─────────────
   billing:
     type: api
-    depends_on:
-      - database
-    owner: architect@company.com
-    last_reviewed: 2026-04-06
-    labels: { area: payments, criticality: core }
-
+    deprecated: true
+    depends_on: [database]
+    owner: payments-team@shop.example
+    last_reviewed: 2026-05-10
+    labels: { area: payments, criticality: core, lifecycle: retired }
   database:
     type: postgres
-    owner: architect@company.com
-    last_reviewed: 2026-04-06
-    labels: { area: platform, criticality: supporting, lifecycle: active }
+    deprecated: true
+    owner: platform-team@shop.example
+    last_reviewed: 2026-05-10
+    labels: { area: platform, criticality: core, lifecycle: retired }
 
+  # ── Storefront ───────────────────────────────────────────────────────────
+  api-gateway:
+    type: api
+    depends_on: [catalog, cart, orders, auth, search]
+    owner: storefront-team@shop.example
+    last_reviewed: 2026-06-01
+    labels: { area: storefront, criticality: core }
+
+  catalog:
+    type: api
+    depends_on: [catalog-db]
+    owner: storefront-team@shop.example
+    last_reviewed: 2026-06-01
+    labels: { area: storefront, criticality: core }
+
+  cart:
+    type: api
+    depends_on: [cart-cache, catalog]
+    owner: storefront-team@shop.example
+    last_reviewed: 2026-05-15
+    labels: { area: storefront, criticality: core }
+
+  search:
+    type: api
+    depends_on: [search-index, catalog-db]
+    owner: storefront-team@shop.example
+    last_reviewed: 2026-04-02
+    labels: { area: storefront, criticality: supporting }
+
+  recommendations:
+    type: api
+    depends_on: [catalog-db, events]
+    owner: storefront-team@shop.example
+    last_reviewed: 2026-03-10
+    labels: { area: storefront, criticality: generic }
+
+  # ── Fulfillment ──────────────────────────────────────────────────────────
+  orders:
+    type: api
+    depends_on: [orders-db, inventory, payments, events]
+    owner: fulfillment-team@shop.example
+    last_reviewed: 2026-06-10
+    labels: { area: fulfillment, criticality: core }
+
+  inventory:
+    type: api
+    depends_on: [inventory-db]
+    owner: fulfillment-team@shop.example
+    last_reviewed: 2026-06-10
+    labels: { area: fulfillment, criticality: core }
+
+  shipping:
+    type: worker
+    depends_on: [orders-db, carrier-api]
+    owner: fulfillment-team@shop.example
+    last_reviewed: 2026-05-20
+    labels: { area: fulfillment, criticality: supporting }
+
+  # ── Payments ─────────────────────────────────────────────────────────────
+  payments:
+    type: api
+    depends_on: [payments-db, payment-gateway]
+    owner: payments-team@shop.example
+    last_reviewed: 2026-06-12
+    labels: { area: payments, criticality: core }
+
+  # ── Platform ─────────────────────────────────────────────────────────────
   auth:
     type: api
-    owner: architect@company.com
-    last_reviewed: 2026-04-06
+    depends_on: [auth-db]
+    owner: platform-team@shop.example
+    last_reviewed: 2026-05-01
+    labels: { area: platform, criticality: generic }
+
+  notifications:
+    type: worker
+    depends_on: [events, email-provider]
+    owner: platform-team@shop.example
+    last_reviewed: 2026-05-05
+    labels: { area: platform, criticality: supporting }
+
+  # ── Data stores ──────────────────────────────────────────────────────────
+  catalog-db:
+    type: postgres
+    owner: storefront-team@shop.example
+    last_reviewed: 2026-06-01
+    labels: { area: storefront, criticality: supporting }
+  orders-db:
+    type: postgres
+    owner: fulfillment-team@shop.example
+    last_reviewed: 2026-06-10
+    labels: { area: fulfillment, criticality: core }
+  inventory-db:
+    type: postgres
+    owner: fulfillment-team@shop.example
+    last_reviewed: 2026-06-10
+    labels: { area: fulfillment, criticality: core }
+  payments-db:
+    type: postgres
+    owner: payments-team@shop.example
+    last_reviewed: 2026-06-12
+    labels: { area: payments, criticality: core }
+  auth-db:
+    type: postgres
+    owner: platform-team@shop.example
+    last_reviewed: 2026-05-01
+    labels: { area: platform, criticality: generic }
+  cart-cache:
+    type: redis
+    owner: storefront-team@shop.example
+    last_reviewed: 2026-05-15
+    labels: { area: storefront, criticality: supporting }
+  search-index:
+    type: other
+    owner: storefront-team@shop.example
+    last_reviewed: 2026-04-02
+    labels: { area: storefront, criticality: supporting }
+  events:
+    type: queue
+    owner: platform-team@shop.example
+    last_reviewed: 2026-05-05
+    labels: { area: platform, criticality: supporting }
+
+  # ── External providers ───────────────────────────────────────────────────
+  payment-gateway:
+    type: external
+    owner: payments-team@shop.example
+    last_reviewed: 2026-06-12
+    labels: { area: payments, criticality: core }
+  carrier-api:
+    type: external
+    owner: fulfillment-team@shop.example
+    last_reviewed: 2026-05-20
+    labels: { area: fulfillment, criticality: supporting }
+  email-provider:
+    type: external
+    owner: platform-team@shop.example
+    last_reviewed: 2026-05-05
     labels: { area: platform, criticality: generic }

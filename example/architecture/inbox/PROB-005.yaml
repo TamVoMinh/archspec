@@ -1,0 +1,18 @@
+id: PROB-005
+title: PII leaking into notification logs
+source: meeting
+type: security
+created_at: 2026-04-08
+status: active
+services:
+  - notifications
+symptoms:
+  - email addresses and order details written to plaintext logs
+  - flagged by the quarterly security audit
+constraints:
+  - log retention is mandated at 90 days
+tags:
+  - compliance
+  - audit
+labels:
+  area: platform

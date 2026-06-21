@@ -4,8 +4,8 @@
 
 roles:
   architecture_lead:
-    name: "[Architecture Lead Name]"
-    email: "[lead@company.com]"
+    name: "Dana Architect"
+    email: "dana@shop.example"
     responsibilities:
       - ADR final acceptance
       - inbox triage SLA enforcement
@@ -34,11 +34,31 @@ triage_policy:
     services_yaml_change: arch_lead_required
     schema_change: arch_lead_required
 
-domain_ownership: {}
-  # Map service names to owner emails. Must cover all services in services.yaml.
-  # api-gateway: alex.kim@company.com
-  # billing: jane.doe@company.com
-  # database: lead@company.com
+domain_ownership:
+  billing: payments-team@shop.example
+  database: platform-team@shop.example
+  api-gateway: storefront-team@shop.example
+  catalog: storefront-team@shop.example
+  cart: storefront-team@shop.example
+  search: storefront-team@shop.example
+  recommendations: storefront-team@shop.example
+  catalog-db: storefront-team@shop.example
+  cart-cache: storefront-team@shop.example
+  search-index: storefront-team@shop.example
+  orders: fulfillment-team@shop.example
+  inventory: fulfillment-team@shop.example
+  shipping: fulfillment-team@shop.example
+  orders-db: fulfillment-team@shop.example
+  inventory-db: fulfillment-team@shop.example
+  carrier-api: fulfillment-team@shop.example
+  payments: payments-team@shop.example
+  payments-db: payments-team@shop.example
+  payment-gateway: payments-team@shop.example
+  auth: platform-team@shop.example
+  auth-db: platform-team@shop.example
+  notifications: platform-team@shop.example
+  events: platform-team@shop.example
+  email-provider: platform-team@shop.example
 
 governance:
   label_lifecycle:
